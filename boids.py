@@ -1,6 +1,6 @@
 from p5 import circle, stroke, fill
 import numpy as np
-class Boid:
+class Boid(object):
     def __init__(self,width,height,position,range, max_speed, rule1W, rule2W, rule3W 
                 ,desired_seperation):
         # Width, height = Screen Output Dimensions
@@ -49,7 +49,7 @@ class Boid:
             if ( (numpy.linalg.norm(b.position - self.position) < self.range)    
                     & (numpy.linalg.norm(b.position - self.position) < self.desired_seperation)  
                     & (b != self) ): #end of condition
-                c = c - (b.position - self.position) #end of if
+                c -= (b.position - self.position) #end of if
         
         return c
 
