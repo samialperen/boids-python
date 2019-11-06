@@ -1,11 +1,11 @@
 from p5 import circle, stroke, fill
 import numpy as np
 class Boid(object):
-    def __init__(self,width,height,position,range, max_speed, rule1W, rule2W, rule3W 
+    def __init__(self,width,height,position,horizon, max_speed, rule1W, rule2W, rule3W 
                 ,desired_seperation):
         # Width, height = Screen Output Dimensions
         # x,y = boids positions
-        # range = It describes how far boid can detect the others
+        # horizon = It describes how far boid can detect the others
         # max_speed = Max speed of each individual in the group
         # Rule1 = Cohesion , Rule2 = Seperation, Rule3= Alignment
         # rule1W = Weight for the rule1 (as a percentage), i.e. rule1W = 5 --> 5%
@@ -16,11 +16,12 @@ class Boid(object):
         self.max_speed = max_speed
         initial_random_velocity = (np.random.rand(2)-0.5) * self.max_speed * 2
         self.velocity = initial_random_velocity
-        self.range = range
+        self.horizon = horizon
         self.rule1W = rule1W
         self.rule2W = rule2W 
         self.rule3W = rule3W 
         self.desired_seperation = desired_seperation
+        
 
     def show_boid(self):
         stroke(255) #white contour colors
@@ -52,11 +53,16 @@ class Boid(object):
         v3 = self.rule3(boids)
 
         self.bound_position()
+        self.show_boid()
         self.velocity += v1 + v2 + v3        
         self.update_boid()
 
-
-
+    # This function is used to move flock to a desired position
+    # desired_position = Desired target position to move boids
+    # step_size = determines how much boids will move towards to desired position
+    # in each iteration as a percent --> step_size = 1 means 1% at each step 
+    def tend_to_place(self,desired_position,step_size):
+        self.velocity = (desired_position - self.position) * (step_size / 100)
 
     def rule1(self,boids): #Cohesion
         center_of_mass = np.zeros(2)
@@ -65,7 +71,7 @@ class Boid(object):
         for b in boids:
             # self is the boid we are currently looking for. We don't want to take its position
             # into account for center of mass that's why we have the expression right of &
-            if (np.linalg.norm(b.position - self.position) < self.range) & (b != self):
+            if (np.linalg.norm(b.position - self.position) < self.horizon) & (b != self):
                 center_of_mass += b.position
             N += 1
                 
@@ -77,7 +83,7 @@ class Boid(object):
     def rule2(self,boids): #Seperation
         c = np.zeros(2)
         for b in boids:
-            if ( (np.linalg.norm(b.position - self.position) < self.range)    
+            if ( (np.linalg.norm(b.position - self.position) < self.horizon)    
                     & (np.linalg.norm(b.position - self.position) < self.desired_seperation)  
                     & (b != self) ): #end of condition
                 c -= (b.position - self.position)*(self.rule2W/100) #end of if
@@ -89,7 +95,7 @@ class Boid(object):
         N = 0 #Total boid number
 
         for b in boids:
-            if (np.linalg.norm(b.position - self.position) < self.range) & (b != self):
+            if (np.linalg.norm(b.position - self.position) < self.horizon) & (b != self):
                 perceived_velocity += b.velocity        
             N += 1
 
