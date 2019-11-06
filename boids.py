@@ -13,10 +13,10 @@ class Boid(object):
         self.width = width
         self.height = height
         self.position = position
-        initial_random_velocity = (np.random.rand(2)-0.5) * 10
+        self.max_speed = max_speed
+        initial_random_velocity = (np.random.rand(2)-0.5) * self.max_speed * 2
         self.velocity = initial_random_velocity
         self.range = range
-        self.max_speed = max_speed
         self.rule1W = rule1W
         self.rule2W = rule2W 
         self.rule3W = rule3W 
@@ -27,6 +27,37 @@ class Boid(object):
         fill(0,0,255) #fill with blue
         circle( (self.position[0],self.position[1]) ,radius=10) 
 
+    def update_boid(self):
+        # Limiting the speed
+        if np.linalg.norm(self.velocity) > self.max_speed:
+            self.velocity = (self.velocity/np.linalg.norm(self.velocity)) * self.max_speed 
+        # Then update the position
+        self.position = np.add(self.position, self.velocity)
+
+    def bound_position(self):
+        # If boids reach the edges, it should come back from other side
+        if self.position[0] > self.width-1:
+            self.position[0] = 0
+        elif self.position[1] > self.height-1:
+            self.position[1] = 0
+        elif self.position[0] < 0:
+            self.position[0] = self.width-1
+        elif self.position[1] < 0:
+            self.position[1] = self.height-1
+
+
+    def main_boid(self, boids):
+        v1 = self.rule1(boids)
+        v2 = self.rule2(boids)
+        v3 = self.rule3(boids)
+
+        self.bound_position()
+        self.velocity += v1 + v2 + v3        
+        self.update_boid()
+
+
+
+
     def rule1(self,boids): #Cohesion
         center_of_mass = np.zeros(2)
         N = 0 #Total boid number
@@ -34,22 +65,22 @@ class Boid(object):
         for b in boids:
             # self is the boid we are currently looking for. We don't want to take its position
             # into account for center of mass that's why we have the expression right of &
-            if (numpy.linalg.norm(b.position - self.position) < self.range) & (b != self):
+            if (np.linalg.norm(b.position - self.position) < self.range) & (b != self):
                 center_of_mass += b.position
             N += 1
                 
-        center_of_mass = center_of_mass // (N-1)
-        target_position = (center_of_mass * self.rule1W) // 100
+        center_of_mass = center_of_mass / (N-1)
+        target_position = (center_of_mass * self.rule1W) / 100
         
         return target_position
 
     def rule2(self,boids): #Seperation
         c = np.zeros(2)
         for b in boids:
-            if ( (numpy.linalg.norm(b.position - self.position) < self.range)    
-                    & (numpy.linalg.norm(b.position - self.position) < self.desired_seperation)  
+            if ( (np.linalg.norm(b.position - self.position) < self.range)    
+                    & (np.linalg.norm(b.position - self.position) < self.desired_seperation)  
                     & (b != self) ): #end of condition
-                c -= (b.position - self.position) #end of if
+                c -= (b.position - self.position)*(self.rule2W/100) #end of if
         
         return c
 
@@ -58,12 +89,12 @@ class Boid(object):
         N = 0 #Total boid number
 
         for b in boids:
-            if (numpy.linalg.norm(b.position - self.position) < self.range) & (b != self):
+            if (np.linalg.norm(b.position - self.position) < self.range) & (b != self):
                 perceived_velocity += b.velocity        
-        N += 1
+            N += 1
 
         perceived_velocity = perceived_velocity / (N-1)
-        pv = (perceived_velocity * rule3W) / 100
+        pv = (perceived_velocity * self.rule3W) / 100
 
         return pv
 
